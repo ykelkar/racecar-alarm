@@ -50,6 +50,8 @@ void TimerSet(unsigned long M)
 enum States{Start, PORT_A_RECEIVE} state;
 unsigned char port_A_value=0x00;
 unsigned char counter_val=0x00;
+
+//sets an LED to the value received via USART
 void Tick()
 {
 	switch (state){
@@ -69,7 +71,7 @@ void Tick()
 	switch (state){
 
 		case PORT_A_RECEIVE:
-		if(USART_HasReceived(0))
+		if(USART_HasReceived(0))				//if the USART receives, then PORTA is set to that value received 
 		{
 			port_A_value = 0x01;
 			USART_Flush(0);

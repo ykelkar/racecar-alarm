@@ -4,7 +4,7 @@
 #include "C:\Users\Avanti\Documents\Atmel Studio\7.0\GccApplication1\GccApplication1\rtc\lcd.c"
 #include "usart_ATmega1284.h"
 
-rtc_t rtc;
+rtc_t rtc;				//use struct variable to create variable rtc
 rtc_t alarm;
 
 volatile unsigned char TimerFlag = 0;
@@ -70,11 +70,7 @@ void Menu()
 		{
 			option = Time_Display_Release;
 		}
-		// 		else if (home_button == 0x40)
-		// 		{
-		// 			option = ALARM;
-		// 		}
-		else if((rtc.hour == alarm_hour) && (rtc.min == alarm_min))
+		else if((rtc.hour == alarm_hour) && (rtc.min == alarm_min))			//if the time is equal to the alarm then the alarm is set off
 		{
 			option = ALARM;
 		}
@@ -201,7 +197,7 @@ void Menu()
 		break;
 		
 		case ALARM:
-		if (USART_HasReceived(0))
+		if (USART_HasReceived(0))				//if it receives a signal back, then the system is reset 
 		{
 			option = Init;
 		}
@@ -349,7 +345,7 @@ void Menu()
 		RTC_SetDateTime(&rtc);
 		RTC_GetDateTime(&rtc);
 		LCD_GoToLine(0);
-		LCD_Printf("alarm:%2x:%2x",(uint16_t)alarm.hour, (uint16_t)alarm.min);
+		LCD_Printf("alarm:%2x:%2x",(uint16_t)alarm.hour, (uint16_t)alarm.min);			//prints the time
 		break;
 		
 		case Set_Alarm_Hour:
@@ -379,10 +375,10 @@ void Menu()
 		case ALARM:
 		if (USART_IsSendReady(0))
 		{
-			USART_Send(0xFF, 0);
+			USART_Send(0xFF, 0);				//sends a signal to the motors if the alarm goes off
 		}
 		
-		if (USART_HasTransmitted(0))
+		if (USART_HasTransmitted(0))			//if transmits correctly, the LCD is cleared 
 		{
 			LCD_Clear();
 		}

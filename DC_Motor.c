@@ -49,8 +49,6 @@ void TimerSet(unsigned long M)
 	
 }
 
-#include <avr/io.h>
-
 enum States {Init, Receive, Off_Release, On_Press, On_Release, Off_Press} state;
 
 void Tick() {
