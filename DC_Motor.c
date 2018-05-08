@@ -1,3 +1,9 @@
+/*	This program is used to program the slave microcontroller to receive the signal 
+	from the master microcontroller indicating that the alarm has gone off. When the 
+	alarm goes off, the motors are activated. To turn off the motors, a button needs 
+	to be pressed. When the button is pressed, a signal is sent back to the master
+	microcontroller and resets the alarm*/
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "usart_ATmega1284.h"
@@ -54,7 +60,7 @@ void Tick() {
 		case Init:
 		
 		case Receive:
-		if (USART_HasReceived(0))
+		if (USART_HasReceived(0))			//if the USART receives a signal, then the state will transition to turning the motors on 
 		{
 			state = Off_Release;
 		}
@@ -125,9 +131,9 @@ void Tick() {
 		break;
 		
 		case On_Release:
-		if (USART_IsSendReady(0))
+		if (USART_IsSendReady(0))				
 		{
-			USART_Send(0xFF, 0);
+			USART_Send(0xFF, 0);				//after the button is pressed, a signal is sent back to reset the alarm 
 		}
 		break;
 		
@@ -140,8 +146,8 @@ void Tick() {
 int main(void)
 {
 	DDRA = 0x00; PORTA = 0xFF;
-	DDRB = 0x0F; PORTB = 0x00;          // initialize port B
-	// motors connected across PC0...Pc3
+	DDRB = 0x0F; PORTB = 0x00;          
+	// motors connected across PB0...PB3
 	
 	state = Init;
 	initUSART(0);
