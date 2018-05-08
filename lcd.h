@@ -23,12 +23,6 @@ PreCompile configuration to enable or disable the API's.
 #define    Enable_LCD_Printf                 1
 /**************************************************************************************************/
 
-
-
-
-
-
-
 /***************************************************************************************************
                         List of commonly used LCD Commands 
 ****************************************************************************************************/
@@ -40,12 +34,6 @@ PreCompile configuration to enable or disable the API's.
 #define CMD_LCD_FOUR_BIT_MODE        0x28u
 #define CMD_LCD_EIGHT_BIT_MODE       0x38u
 /**************************************************************************************************/
-
-
-
-
-
-
 
 /***************************************************************************************************
                              Commonly used LCD macros/Constants
@@ -61,12 +49,6 @@ PreCompile configuration to enable or disable the API's.
 #define C_NumOfBinDigitsToDisplay_U8         16u   // Max bits of a binary number to be displayed
 #define C_MaxDigitsToDisplayUsingPrintf_U8   C_DisplayDefaultDigits_U8 /* Max dec/hexadecimal digits to be displayed using printf */
 /**************************************************************************************************/
-
-
-
-
-
-
 
 /***************************************************************************************************
                                  Struct/Enums used
@@ -97,10 +79,6 @@ typedef struct
 }LcdConfig_st;
 
 /**************************************************************************************************/
-
-
-
-
 
 /***************************************************************************************************
                              Function Prototypes

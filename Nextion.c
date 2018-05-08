@@ -1,7 +1,7 @@
 //Turns on LED if receives value from Nextion
 
 #include <avr/interrupt.h>
-#include "usart_ATmega1284.h"
+#include "usart.h"
 
 
 volatile unsigned char TimerFlag = 0;

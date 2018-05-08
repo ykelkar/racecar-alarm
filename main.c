@@ -1,8 +1,14 @@
+/*	This program is used to program the master microcontroller to setup the time and date 
+	as well as set the alarm. When the alarm is set and goes off when the time is equal to 
+	the set alarm, a signal is sent via USART to the slave microcontroller, turning on the 
+	DC motors. 
+*/
+
 #include <stdio.h>
 #include <avr/interrupt.h>
 #include "C:\Users\Avanti\Documents\Atmel Studio\7.0\GccApplication1\GccApplication1\rtc\rtc.c"
 #include "C:\Users\Avanti\Documents\Atmel Studio\7.0\GccApplication1\GccApplication1\rtc\lcd.c"
-#include "usart_ATmega1284.h"
+#include "usart.h"
 
 rtc_t rtc;				//use struct variable to create variable rtc
 rtc_t alarm;

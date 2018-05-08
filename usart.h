@@ -1,5 +1,5 @@
-#ifndef USART_1284_H
-#define USART_1284_H
+#ifndef USART_H
+#define USART_H
 
 // USART Setup Values
 #define F_CPU 8000000UL // Assume uC operates at 8MHz
@@ -153,4 +153,4 @@ unsigned char USART_Receive(unsigned char usartNum)
 	}
 }
 
-#endif USART_1284_H
+#endif USART_H

@@ -3,9 +3,6 @@
 #include "gpio.h"
 
 
-
-
-
 /***************************************************************************************************
                   void GPIO_PinDirection(gpioPins_et enm_pinNumber, uint8_t v_pinDirn_u8)
  ***************************************************************************************************
@@ -64,12 +61,6 @@ void GPIO_PinDirection(gpioPins_et enm_pinNumber, uint8_t v_pinDirn_u8)
 
 
 
-
-
-
-
-
-
 /***************************************************************************************************
             void GPIO_PinWrite(gpioPins_et enm_pinNumber, uint8_t v_pinValue_u8)
  ***************************************************************************************************
@@ -124,35 +115,9 @@ void GPIO_PinWrite(gpioPins_et enm_pinNumber, uint8_t v_pinValue_u8)
         util_UpdateBit(PORTD,enm_pinNumber,v_pinValue_u8);
         break;
 #endif   
-
-
-#ifdef PORTE
-    case 4:
-        util_UpdateBit(PORTE,enm_pinNumber,v_pinValue_u8);
-        break;
-#endif        
-
-        
-#ifdef PORTF        
-    case 5:
-        util_UpdateBit(PORTF,enm_pinNumber,v_pinValue_u8);
-        break;
-#endif        
-
-        
-#ifdef PORTG        
-    case 6:
-        util_UpdateBit(PORTG,enm_pinNumber,v_pinValue_u8);
-        break;
-#endif      
+      
     }                
 }
-
-
-
-
-
-
 
 
 /***************************************************************************************************
@@ -203,27 +168,6 @@ uint8_t GPIO_PinRead(gpioPins_et enm_pinNumber)
         returnStatus = util_IsBitSet(PIND,enm_pinNumber);
         break;
 #endif   
-
-
-#ifdef PINE    
-    case 4: 
-        returnStatus = util_IsBitSet(PINE,enm_pinNumber);
-        break;
-#endif        
-
-
-#ifdef PINF
-    case 5:
-        returnStatus = util_IsBitSet(PINF,enm_pinNumber);
-        break;
-#endif
-
-        
-#ifdef PING
-    case 6:
-        returnStatus = util_IsBitSet(PING,enm_pinNumber);
-        break;
-#endif             
     }                         
     return returnStatus;
 }

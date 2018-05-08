@@ -17,12 +17,8 @@ typedef enum
 }gpioPins_et;
 
 
-
-/***************************************************************************************************
-                             Function prototypes
-***************************************************************************************************/
 void GPIO_PinDirection(gpioPins_et enm_pinNumber, uint8_t v_pinDirn_u8);
 void GPIO_PinWrite(gpioPins_et enm_pinNumber, uint8_t v_pinValue_u8);
 uint8_t GPIO_PinRead(gpioPins_et enm_pinNumber);
-/**************************************************************************************************/
+
 #endif

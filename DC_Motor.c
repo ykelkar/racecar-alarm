@@ -6,7 +6,7 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "usart_ATmega1284.h"
+#include "usart.h"
 
 volatile unsigned char TimerFlag = 0;
 unsigned long avr_timer_M = 1;

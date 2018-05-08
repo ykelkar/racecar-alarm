@@ -1,11 +1,5 @@
-
-
 #include "rtc.h"
 #include "i2c.c"
-
-
-
-
 
 /***************************************************************************************************
                          void RTC_Init(void)
@@ -27,19 +21,6 @@ void RTC_Init(void)
 
     I2C_Stop();                             // Stop I2C communication after initializing DS1307
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /***************************************************************************************************
                     void RTC_SetDateTime(rtc_t *rtc)
@@ -70,12 +51,6 @@ void RTC_SetDateTime(rtc_t *rtc)
 
     I2C_Stop();                              // Stop I2C communication after Setting the Date
 }
-
-
-
-
-
-
 
 /***************************************************************************************************
                      void RTC_GetDateTime(rtc_t *rtc)
