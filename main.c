@@ -1,16 +1,10 @@
-/*	This program is used to program the master microcontroller to setup the time and date 
-	as well as set the alarm. When the alarm is set and goes off when the time is equal to 
-	the set alarm, a signal is sent via USART to the slave microcontroller, turning on the 
-	DC motors. 
-*/
-
 #include <stdio.h>
 #include <avr/interrupt.h>
 #include "C:\Users\Avanti\Documents\Atmel Studio\7.0\GccApplication1\GccApplication1\rtc\rtc.c"
 #include "C:\Users\Avanti\Documents\Atmel Studio\7.0\GccApplication1\GccApplication1\rtc\lcd.c"
-#include "usart.h"
+#include "usart_ATmega1284.h"
 
-rtc_t rtc;				//use struct variable to create variable rtc
+rtc_t rtc;
 rtc_t alarm;
 
 volatile unsigned char TimerFlag = 0;
@@ -59,7 +53,6 @@ uint8_t alarm_min = 0x00;
 enum Menu_options {Init, Time_Display, ALARM, Time_Display_Release, Change_Time, Transition, Change_Date, Set_Alarm, Set_Hour, Set_Minute, Set_Sec, Set_Date, Set_Month, Set_Year, Reset, Set_Alarm_Hour, Set_Alarm_Min} option;
 void Menu()
 {
-	unsigned char rtc_hour = 0x00;
 	unsigned char sec_button = ~PINA & 0x04;		//button that controls seconds and year
 	unsigned char minute_button = ~PINA & 0x08;		//controls minutes and date
 	unsigned char hour_button = ~PINA & 0x10;		//controls hour and month
@@ -76,7 +69,11 @@ void Menu()
 		{
 			option = Time_Display_Release;
 		}
-		else if((rtc.hour == alarm_hour) && (rtc.min == alarm_min))			//if the time is equal to the alarm then the alarm is set off
+		// 		else if (home_button == 0x40)
+		// 		{
+		// 			option = ALARM;
+		// 		}
+		else if((rtc.hour == alarm_hour) && (rtc.min == alarm_min))
 		{
 			option = ALARM;
 		}
@@ -203,7 +200,7 @@ void Menu()
 		break;
 		
 		case ALARM:
-		if (USART_HasReceived(0))				//if it receives a signal back, then the system is reset 
+		if (USART_HasReceived(0))
 		{
 			option = Init;
 		}
@@ -223,7 +220,7 @@ void Menu()
 		break;
 		
 		case Time_Display:
-		RTC_GetDateTime(&rtc);
+		RTC_Get(&rtc);
 		if (rtc.hour > 0x12)
 		{
 			rtc.hour = 0x01;
@@ -237,8 +234,8 @@ void Menu()
 		break;
 		
 		case Change_Time:
-		RTC_SetDateTime(&rtc);
-		RTC_GetDateTime(&rtc);
+		RTC_Set(&rtc);
+		RTC_Get(&rtc);
 		LCD_GoToLine(0);
 		LCD_Printf("setTime:%2x:%2x:%2x",(uint16_t)rtc.hour,(uint16_t)rtc.min,(uint16_t)rtc.sec);
 		break;
@@ -248,8 +245,8 @@ void Menu()
 		break;
 		
 		case Change_Date:
-		RTC_SetDateTime(&rtc);
-		RTC_GetDateTime(&rtc);
+		RTC_Set(&rtc);
+		RTC_Get(&rtc);
 		LCD_GoToLine(0);
 		LCD_Printf("setDate:%2x/%2x/%2x",(uint16_t)rtc.month,(uint16_t)rtc.date,(uint16_t)rtc.year);
 		break;
@@ -348,10 +345,10 @@ void Menu()
 		break;
 
 		case Set_Alarm:
-		RTC_SetDateTime(&rtc);
-		RTC_GetDateTime(&rtc);
+		RTC_Set(&rtc);
+		RTC_Get(&rtc);
 		LCD_GoToLine(0);
-		LCD_Printf("alarm:%2x:%2x",(uint16_t)alarm.hour, (uint16_t)alarm.min);			//prints the time
+		LCD_Printf("alarm:%2x:%2x",(uint16_t)alarm.hour, (uint16_t)alarm.min);
 		break;
 		
 		case Set_Alarm_Hour:
@@ -381,10 +378,10 @@ void Menu()
 		case ALARM:
 		if (USART_IsSendReady(0))
 		{
-			USART_Send(0xFF, 0);				//sends a signal to the motors if the alarm goes off
+			USART_Send(0xFF, 0);
 		}
 		
-		if (USART_HasTransmitted(0))			//if transmits correctly, the LCD is cleared 
+		if (USART_HasTransmitted(0))
 		{
 			LCD_Clear();
 		}
@@ -405,7 +402,7 @@ int main()
 	LCD_Init(2,16);
 	
 	/*Connect SCL->PC0, SDA->PC1*/
-	RTC_Init();
+	RTC_init();
 	TimerSet(10);
 	TimerOn();
 	rtc.hour = 0x12;		//  testing to hard code all values for hour, min, sec, date, etc.
@@ -421,7 +418,7 @@ int main()
 	alarm.min = 0x46;
 
 	
-	RTC_SetDateTime(&rtc);  //sets the date and the time using RTC and I2C
+	RTC_Set(&rtc);  //sets the date and the time using RTC and I2C
 
 	while(1)
 	{

@@ -1,7 +1,7 @@
 #ifndef _I2C_H
 #define _I2C_H
 
-#include <avr\io.h>
+#include <avr/io.h>
 #include "stdutils.h"
 
 void I2C_Init();
