@@ -1,5 +1,5 @@
 #include <stdarg.h>
-#include "delay.h"
+#include <util/delay.h>
 #include "lcd.h"
 #include "gpio.c"
 #include "stdutils.h"
@@ -14,6 +14,10 @@ LcdConfig_st LCDConfig;             //Structure containing the selected LCD Conf
 uint8_t ARR_LcdLineNumAddress_U8[]={0x80,0xc0,0x90,0xd0};
 /**************************************************************************************************/
 
+
+/***************************************************************************************************
+                            local function prototypes
+***************************************************************************************************/
 static void lcd_DataWrite( uint8_t dat);
 static void lcd_BusyCheck(void);
 static void lcd_Reset(void);
@@ -21,6 +25,7 @@ static void lcd_SendCmdSignals(void);
 static void lcd_SendDataSignals(void);
 static void lcd_SendHigherNibble(uint8_t dataByte);
 static void lcd_SendLowerNibble(uint8_t dataByte);
+/**************************************************************************************************/
 
 
 /**************************************************************************************************
@@ -42,7 +47,8 @@ void LCD_SetUp( pin numbers of lcd)
  * Return value    : none
 
  * description  :This function is used to configure the controller pins for LCD operation.
-                 Pass the pin numbers where the RS,RW,EN, B0-B7 are connected as parameters.
+                 Pass the pin numbers where the RS,RW,EN, D0-D7 are connected as parameters.
+                 In case of four bit mode pass P_NC as parameter for D0-D3.
                  If RW is not used then pass P_NC as parameter for RS.
 **************************************************************************************************/
 void LCD_SetUp(gpioPins_et RS, 
@@ -74,18 +80,18 @@ void LCD_SetUp(gpioPins_et RS,
 
     if((B0 == P_NC) || (B1 == P_NC) || (B2 == P_NC) || (B3 == P_NC))
     {
-        LCDConfig.v_LcdMode_U8 = 4; // Select 4-bit mode as B0-B3 are not used(P_NC)
+        LCDConfig.v_LcdMode_U8 = 4; // Select 4-bit mode as D0-D3 are not used(P_NC)
     }
     else
     {
-        LCDConfig.v_LcdMode_U8 = 8; // 8-bit mode configure B0-B3 as output.      
+        LCDConfig.v_LcdMode_U8 = 8; // 8-bit mode configure D0-D3 as output.      
         GPIO_PinDirection(B0,OUTPUT);
         GPIO_PinDirection(B1,OUTPUT);
         GPIO_PinDirection(B2,OUTPUT);
         GPIO_PinDirection(B3,OUTPUT);
     }
 
-    /* Configure RS,RW,EN, B4-B7 as Output for both 4/8-bit mode.*/
+    /* Configure RS,RW,EN, D4-D7 as Output for both 4/8-bit mode.*/
     GPIO_PinDirection(RS,OUTPUT);
     GPIO_PinDirection(RW,OUTPUT);
     GPIO_PinDirection(EN,OUTPUT);
@@ -120,7 +126,7 @@ void LCD_Init(uint8_t v_lcdNoOfLines_u8, uint8_t v_MaxCharsPerLine_u8)
         ARR_LcdLineNumAddress_U8[C_LcdLineThree] =  0xd0 + (v_MaxCharsPerLine_u8 & 0x0fu);
     }
 
-    DELAY_ms(100);
+    _delay_ms(100);
 
     if(LCDConfig.v_LcdMode_U8 == C_EightBitMode_U8)
     {
@@ -136,6 +142,9 @@ void LCD_Init(uint8_t v_lcdNoOfLines_u8, uint8_t v_MaxCharsPerLine_u8)
     LCD_Clear();                             // Clear the LCD and go to First line First Position
 }
 
+
+
+
 /***************************************************************************************************
                          void LCD_Clear()
 ****************************************************************************************************
@@ -149,6 +158,10 @@ void LCD_Clear()
     LCD_CmdWrite(CMD_LCD_CLEAR);    // Clear the LCD and go to First line First Position
     LCD_GoToLine(C_LcdLineZero);
 }
+
+
+
+
 
 /***************************************************************************************************
                          void LCD_GoToLine(uint8_t v_lineNumber_u8)
@@ -180,6 +193,11 @@ void LCD_GoToLine(uint8_t v_lineNumber_u8)
     }
 }
 
+
+
+
+
+
 /***************************************************************************************************
                          void  LCD_GoToNextLine()
 ****************************************************************************************************
@@ -200,6 +218,11 @@ void  LCD_GoToNextLine(void)
         v_LcdTrackLineNum_U8 = C_LcdLineZero;
     LCD_CmdWrite(ARR_LcdLineNumAddress_U8[v_LcdTrackLineNum_U8]);
 }
+
+
+
+
+
 
 /***************************************************************************************************
                 void LCD_SetCursor(char v_lineNumber_u8,char v_charNumber_u8)
@@ -232,6 +255,14 @@ void LCD_SetCursor(uint8_t v_lineNumber_u8, uint8_t v_charNumber_u8)
 }
 #endif
 
+
+
+
+
+
+
+
+
 /***************************************************************************************************
                        void LCD_CmdWrite( uint8_t v_lcdCmd_u8)
 ****************************************************************************************************
@@ -261,6 +292,12 @@ void LCD_CmdWrite( uint8_t v_lcdCmd_u8)
      lcd_SendCmdSignals();
 }
 
+
+
+
+
+
+
 /***************************************************************************************************
                        void LCD_DisplayChar( char v_lcdData_u8)
 ****************************************************************************************************
@@ -287,6 +324,12 @@ void LCD_DisplayChar(char v_lcdData_u8)
     }
 }
 
+
+
+
+
+
+
 /***************************************************************************************************
                        void LCD_DisplayString(char *ptr_stringPointer_u8)
 ****************************************************************************************************
@@ -306,6 +349,12 @@ void LCD_DisplayString(const char *ptr_stringPointer_u8)
         LCD_DisplayChar(*ptr_stringPointer_u8++); // Loop through the string and display char by char
 }
 #endif
+
+
+
+
+
+
 
 /***************************************************************************************************
                void LCD_ScrollMessage(uint8_t v_lineNumber_u8, char *ptr_msgPointer_u8)
@@ -354,11 +403,16 @@ void LCD_ScrollMessage(uint8_t v_lineNumber_u8, char *ptr_msgPointer_u8)
             j++;
         }
 
-        DELAY_ms(C_ScrollDelayTime_U8);
+        _delay_ms(C_ScrollDelayTime_U8);
     }
     LCD_CmdWrite(CMD_DISPLAY_ON_CURSOR_ON);              // Finally enable the Cursor
 }
 #endif
+
+
+
+
+
 
 /***************************************************************************************************
 void LCD_DisplayNumber(uint8_t v_numericSystem_u8, uint32_t v_number_u32, uint8_t v_numOfDigitsToDisplay_u8)
@@ -456,6 +510,13 @@ void LCD_DisplayNumber(uint8_t v_numericSystem_u8, uint32_t v_number_u32, uint8_
 }
 #endif
 
+
+
+
+
+
+
+
 /*************************************************************************************************
             void  LCD_DisplayFloatNumber(double v_floatNum_f32)
 **************************************************************************************************
@@ -490,6 +551,11 @@ void LCD_DisplayFloatNumber(double v_floatNum_f32)
     LCD_DisplayNumber(C_DECIMAL_U8,v_decNumber_u32,C_DisplayDefaultDigits_U8);
 }
 #endif
+
+
+
+
+
 
 /*************************************************************************************************
             void LCD_Printf(const char *argList, ...)
@@ -664,6 +730,10 @@ void LCD_Printf(const char *argList, ...)
 #endif
 
 
+
+
+
+
 /*************************************************************************************************
                        static void lcd_DataWrite( uint8_t dat)
 **************************************************************************************************
@@ -691,6 +761,11 @@ static void lcd_DataWrite( uint8_t dataByte)
 }
 
 
+
+
+
+
+
 /*************************************************************************************************
                        static void lcd_BusyCheck()
 **************************************************************************************************
@@ -714,9 +789,9 @@ static void lcd_BusyCheck(void)
     {
 
         GPIO_PinWrite(LCDConfig.EN,0);
-        DELAY_us(10);
+        _delay_us(10);
         GPIO_PinWrite(LCDConfig.EN,1); 
-        DELAY_us(10);
+        _delay_us(10);
         busyflag = GPIO_PinRead(LCDConfig.B7);
 
 
@@ -724,9 +799,9 @@ static void lcd_BusyCheck(void)
         {
             /* Perform extra dummy read for 4-bit */            
             GPIO_PinWrite(LCDConfig.EN,0);
-            DELAY_us(10);
+            _delay_us(10);
             GPIO_PinWrite(LCDConfig.EN,1); 
-            DELAY_us(10);
+            _delay_us(10);
         }    
     }while(busyflag!=0);
 
@@ -736,9 +811,13 @@ else
  {
     /* Busy flag cannot be read as RW is not available hence Extra delay of 1ms is added 
       to ensure the LCD completes previous operation and ready to receive new commands/data */
-    DELAY_ms(1);  
+    _delay_ms(1);  
  }
 }
+
+
+
+
 
 
 /*************************************************************************************************
@@ -755,17 +834,22 @@ static void lcd_Reset(void)
     /* LCD reset sequence for 4-bit mode, refer data sheet for more info */
     lcd_SendHigherNibble(0x30);
     lcd_SendCmdSignals();
-    DELAY_ms(100);
+    _delay_ms(100);
     lcd_SendHigherNibble(0x30);
     lcd_SendCmdSignals();
-    DELAY_us(200);
+    _delay_us(200);
     lcd_SendHigherNibble(0x30);
     lcd_SendCmdSignals();
-    DELAY_us(200);
+    _delay_us(200);
     lcd_SendHigherNibble(0x20);
     lcd_SendCmdSignals();
-    DELAY_us(200);
+    _delay_us(200);
 }
+
+
+
+
+
 
 /*************************************************************************************************
                        static void lcd_SendHigherNibble(uint8_t var)
@@ -783,6 +867,9 @@ static void lcd_SendHigherNibble(uint8_t dataByte)
     GPIO_PinWrite(LCDConfig.B7,util_IsBitSet(dataByte,7));
 }
 
+
+
+
 /*************************************************************************************************
                        static void lcd_SendHigherNibble(uint8_t var)
 **************************************************************************************************
@@ -799,6 +886,9 @@ static void lcd_SendLowerNibble(uint8_t dataByte)
     GPIO_PinWrite(LCDConfig.B3,util_IsBitSet(dataByte,3));
 }
 
+
+
+
 /*************************************************************************************************
                        static void lcd_SendCmdSignals()
 **************************************************************************************************
@@ -812,10 +902,13 @@ static void lcd_SendCmdSignals(void)
      GPIO_PinWrite(LCDConfig.RS,0);
      GPIO_PinWrite(LCDConfig.RW,0);
      GPIO_PinWrite(LCDConfig.EN,1);
-     DELAY_us(10);
+     _delay_us(10);
      GPIO_PinWrite(LCDConfig.EN,0);
   
 }
+
+
+
 
 /*************************************************************************************************
                        static void lcd_SendDataSignals()
@@ -830,7 +923,7 @@ static void lcd_SendDataSignals(void)
      GPIO_PinWrite(LCDConfig.RS,1);
      GPIO_PinWrite(LCDConfig.RW,0);
      GPIO_PinWrite(LCDConfig.EN,1);
-     DELAY_us(10);
+     _delay_us(10);
      GPIO_PinWrite(LCDConfig.EN,0);
 }
 

@@ -9,15 +9,15 @@
  *************************************************************************************************/
 void RTC_init()
 {
-    I2C_Init();                             // Initialize the I2C module.
-    I2C_Start();                            // Start I2C communication
+    I2C_init();                             // Initialize the I2C module.
+    I2C_startCond();                            // Start I2C communication
 
     I2C_Write(C_DS3231Write);				// Connect to DS3231 by sending its ID on I2C Bus
     I2C_Write(C_DS3231SECReg);				// Select the DS3231 ControlRegister to configure DS3231
 
     I2C_Write(0x00);                        // Write 0x00 to Control register to disable SQW-Out
 
-    I2C_Stop();                             // Stop I2C communication after initializing DS3231
+    I2C_stopCond();                             // Stop I2C communication after initializing DS3231
 }
 
 /***************************************************************************************************
@@ -31,7 +31,7 @@ void RTC_init()
 
 void RTC_Set(rtc_t *rtc)
 {
-    I2C_Start();							// Start I2C communication
+    I2C_startCond();							// Start I2C communication
 
     I2C_Write(C_DS3231Write);				// connect to DS1307 by sending its ID on I2c Bus
     I2C_Write(C_DS3231SECReg);				// Request SEC RAM address at 00h
@@ -44,7 +44,7 @@ void RTC_Set(rtc_t *rtc)
     I2C_Write(rtc->month);                  // .. month .. 05h
     I2C_Write(rtc->year);                   // .. year .. 06h
 
-    I2C_Stop();                             // Stop I2C communication after Setting the Date
+    I2C_stopCond();                         // Stop I2C communication after Setting the Date
 }
 
 /***************************************************************************************************
@@ -57,23 +57,23 @@ void RTC_Set(rtc_t *rtc)
 
 void RTC_Get(rtc_t *rtc)
 {
-    I2C_Start();                            // Start I2C communication
+    I2C_startCond();                            // Start I2C communication
 
     I2C_Write(C_DS3231Write);				// connect to DS3231 by sending its ID on I2c Bus
     I2C_Write(C_DS3231SECReg);				// Request SEC RAM address at 00H
 
-    I2C_Stop();                             // Stop I2C communication after selecting Sec Register
+    I2C_stopCond();                             // Stop I2C communication after selecting Sec Register
 
-    I2C_Start();                            // Start I2C communication
+    I2C_startCond();                            // Start I2C communication
     I2C_Write(C_DS3231Read);				// connect to DS3231(Read mode) by sending its ID
 
     rtc->sec = I2C_Read(1);					// read second and return Positive ACK
     rtc->min = I2C_Read(1);                 // .. minute .. Positive ACK
-    rtc->hour = I2C_Read(1);					// .. hour .. Negative/No ACK
+    rtc->hour = I2C_Read(1);				// .. hour .. Negative/No ACK
     rtc->weekDay = I2C_Read(1);				// .. weekDay .. Positive ACK
-    rtc->date = I2C_Read(1);					// .. date .. Positive ACK
-    rtc->month = I2C_Read(1);					// .. month .. Positive ACK
-    rtc->year = I2C_Read(0);					// .. year .. Negative/No ACK
+    rtc->date = I2C_Read(1);				// .. date .. Positive ACK
+    rtc->month = I2C_Read(1);				// .. month .. Positive ACK
+    rtc->year = I2C_Read(0);				// .. year .. Negative/No ACK
 
-    I2C_Stop();                              // Stop I2C communication after reading the Date
+    I2C_stopCond();                         // Stop I2C communication after reading the Date
 }
