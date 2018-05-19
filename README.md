@@ -2,7 +2,7 @@
 
 Libraries used:
 
-i2c.h, i2c.h: Created in 179J
+i2c.h, i2c.c: Created in 179J
 
 rtc.h, rtc.c: Created in 179J
 
