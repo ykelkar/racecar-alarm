@@ -201,7 +201,7 @@ void Menu()
 		break;
 		
 		case ALARM:
-		if (USART_HasReceived(0))
+		if (USART_HasReceived(1))
 		{
 			option = Init;
 		}
@@ -377,12 +377,12 @@ void Menu()
 		break;
 		
 		case ALARM:
-		if (USART_IsSendReady(0))
+		if (USART_IsSendReady(1))
 		{
-			USART_Send(0xFF, 0);
+			USART_Send(0xFF, 1);
 		}
 		
-		if (USART_HasTransmitted(0))
+		if (USART_HasTransmitted(1))
 		{
 			LCD_Clear();
 		}
@@ -397,7 +397,7 @@ int main()
 	DDRA = 0x03; PORTA = 0xFC;		//2 lower bits set to output for the LCD and the rest to input for the buttons
 	option = Init;
 	
-	initUSART(0);
+	initUSART(1);
 	/*Connect RS->PA0, RW->GND, EN->PA1 and data bus to PB0-PB7*/
 	LCD_SetUp(PA_0,P_NC,PA_1,PB_0,PB_1,PB_2,PB_3,PB_4,PB_5,PB_6,PB_7);
 	LCD_Init(2,16);
