@@ -5,8 +5,19 @@
 	microcontroller and resets the alarm*/
 
 #include <avr/io.h>
+#include <util/delay.h>
+#define F_CPU 8000000UL
 #include <avr/interrupt.h>
-#include "usart.h"
+#include <string.h>
+#include <stdlib.h>
+#include "usart_ATmega1284.h"
+
+
+#define  Trigger_pin	PC7	/* Trigger pin */
+
+int TimerOverflow = 0;
+
+unsigned char obj_detect = 0;
 
 volatile unsigned char TimerFlag = 0;
 unsigned long avr_timer_M = 1;
@@ -42,6 +53,7 @@ ISR(TIMER1_COMPA_vect)
 	}
 }
 
+
 void TimerSet(unsigned long M)
 {
 	avr_timer_M = M;
@@ -49,16 +61,190 @@ void TimerSet(unsigned long M)
 	
 }
 
-enum States {Init, Receive, Off_Release, On_Press, On_Release, Off_Press} state;
+void InitPWM()
+{
+   /*
+   TCCR0 - Timer Counter Control Register (TIMER0)
+   -----------------------------------------------
+   BITS DESCRIPTION
+   
+
+   NO:   NAME   DESCRIPTION
+   --------------------------
+   BIT 7 : FOC0   Force Output Compare [Not used in this example]
+   BIT 6 : WGM00  Wave form generation mode [SET to 1]
+   BIT 5 : COM01  Compare Output Mode        [SET to 1]
+   BIT 4 : COM00  Compare Output Mode        [SET to 0]
+
+   BIT 3 : WGM01  Wave form generation mode [SET to 1]
+   BIT 2 : CS02   Clock Select               [SET to 0]
+   BIT 1 : CS01   Clock Select               [SET to 0]
+   BIT 0 : CS00   Clock Select               [SET to 1]
+
+   The above settings are for
+   --------------------------
+
+   Timer Clock = CPU Clock (No Prescaling)
+   Mode        = Fast PWM
+   PWM Output  = Non Inverted
+
+   */
+
+
+	TCCR0A = (1 << COM0A1 | 1 << COM0A0 | 1 << WGM00 | 1 << WGM01); // Toggle OC1A on Compare Match Fast PWM
+	TCCR0B = (1 << CS00);	// No prescalar
+
+	TCCR2A = (1 << COM2A1 | 1 << COM2A0 | 1 << WGM20 | 1 << WGM21);
+	TCCR2B = (1 << CS20); //OC2A
+	
+}
+unsigned char PD5_high = 255;
+unsigned char PD5_low = 10;
+unsigned char PD7_high = 0;
+unsigned char PD7_low = 20;
+
+enum PWMStates {Init, Wait, Turn} PWM_state;
+void PWM_Tick() 
+{
+	// Transitions
+	switch(PWM_state) 
+	{
+		
+		case Init:
+		PWM_state = Wait;
+		break;
+		
+		case Wait:
+		if (obj_detect == 1)
+		{
+			PWM_state = Turn;
+		}
+		else 
+		{
+			PWM_state = Wait;
+		}
+		break;
+		
+		case Turn:
+		if (obj_detect == 1)
+		{
+			PWM_state = Turn;
+		}
+		else 
+		{
+			PWM_state = Wait;
+		}
+		break;
+	
+		default:
+		PWM_state = Init;
+		break;
+	}
+	
+	// Actions
+	switch(PWM_state) 
+	{
+		case Init:
+		OCR1A = 0;
+		break;
+		
+		case Wait:
+		OCR1A =	PD5_high; //Toggle PD5
+		OCR2A = PD7_high; //Toggle PD7
+		PORTD |= 0xA0;
+		break;
+		
+		case Turn:
+		OCR1A =	PD5_low; //Toggle PD5
+		OCR2A = PD7_high; //Toggle PD7
+		PORTD |= 0xA0;
+		
+		default:
+		break;
+	}
+}
+
+enum sensorState {Sense} sensor_state;
+void Sensor()
+{
+	unsigned long count;
+	double distance;	
+	switch (sensor_state)
+	{
+		case Sense:
+		/* Give 10us trigger pulse on trig. pin to HC-SR04 */
+		PORTC |= (1 << Trigger_pin);
+		_delay_us(10);
+		PORTC &= (~(1 << Trigger_pin));
+		
+		TCNT1 = 0;	/* Clear Timer counter */
+		TCCR1B = 0x41;	/* Capture on rising edge, No prescaler*/
+		TIFR1 = 1<<ICF1;	/* Clear ICP flag (Input Capture flag) */
+		TIFR1 = 1<<TOV1;	/* Clear Timer Overflow flag */
+
+		/*Calculate width of Echo by Input Capture (ICP) */
+		
+		while ((TIFR1 & (1 << ICF1)) == 0);/* Wait for rising edge */
+		TCNT1 = 0;	/* Clear Timer counter */
+		TCCR1B = 0x01;	/* Capture on falling edge, No prescaler */
+		TIFR1 = 1<<ICF1;	/* Clear ICP flag (Input Capture flag) */
+		TIFR1 = 1<<TOV1;	/* Clear Timer Overflow flag */
+		TimerOverflow = 0;/* Clear Timer overflow count */
+
+		while ((TIFR1 & (1 << ICF1)) == 0);/* Wait for falling edge */
+		count = ICR1 + (65535 * TimerOverflow);	/* Take count */
+		distance = (double)count / 466.47;
+		
+		if (distance < 10)
+		{
+			PORTC = 0x40;
+			obj_detect = 1;
+		}
+		else if (distance > 10)
+		{
+			PORTC = 0x00;
+			obj_detect = 0;
+		}
+
+		// 		dtostrf(distance, 2, 2, string);/* distance to string */
+		// 		strcat(string, " cm   ");	/* Concat unit i.e.cm */
+		// 		LCD_String_xy(2, 0, "Dist = ");
+		// 		LCD_String_xy(2, 7, string);	/* Print distance */
+		_delay_ms(200);
+		break;
+	}
+}
+/******************************************************************
+Sets the duty cycle of output. 
+
+Arguments
+---------
+duty: Between 0 - 255
+
+0= 0%
+
+255= 100%
+
+The Function sets the duty cycle of pwm output generated on OC0 PIN
+The average voltage on this output pin will be
+
+         duty
+ Vout=  ------ x 5v
+         255 
+
+This can be used to control the brightness of LED or Speed of Motor.
+*********************************************************************/
+
+enum States {Init1, Receive, Off_Release, On_Press, On_Release, Off_Press} state;
 
 void Tick() {
 	unsigned char A0 = ~PINA & 0x01;
 	
 	switch(state) { //Transitions
-		case Init:
+		case Init1:
 		
 		case Receive:
-		if (USART_HasReceived(0))			//if the USART receives a signal, then the state will transition to turning the motors on 
+		if (USART_HasReceived(0))
 		{
 			state = Off_Release;
 		}
@@ -113,7 +299,7 @@ void Tick() {
 		break;
 	}
 	switch(state) { //State Actions
-		case Init:
+		case Init1:
 		PORTB = 0x00;
 		break;
 		
@@ -129,9 +315,9 @@ void Tick() {
 		break;
 		
 		case On_Release:
-		if (USART_IsSendReady(0))				
+		if (USART_IsSendReady(0))
 		{
-			USART_Send(0xFF, 0);				//after the button is pressed, a signal is sent back to reset the alarm 
+			USART_Send(0xFF, 0);
 		}
 		break;
 		
@@ -141,23 +327,33 @@ void Tick() {
 	}
 }
 
-int main(void)
+int main()
 {
-	DDRA = 0x00; PORTA = 0xFF;
-	DDRB = 0x0F; PORTB = 0x00;          
-	// motors connected across PB0...PB3
+	DDRA = 0xF0; PORTA = 0x0F;
+	DDRD = 0xBF; PORTD = 0x40;
+	DDRB = 0xFF; PORTB = 0x00;
+	DDRC = 0xFF; PORTC = 0x00;
 	
-	state = Init;
-	initUSART(0);
-	USART_Flush(0);
+	unsigned long count;
+	double distance;
+	
+	sei();			/* Enable global interrupt */
+	TIMSK1 = (1 << TOIE1);	/* Enable Timer1 overflow interrupts */
+	TCCR1A = 0;		/* Set all bit to zero Normal operation */
+	
+	//Initialize PWM Channel 0
+	PWM_state = Init;
+	sensor_state = Sense;
+	state = Init1;
 	TimerSet(100);
 	TimerOn();
-	
+	InitPWM();
+	//Do this forever
+
 	while(1)
 	{
+		PWM_Tick();
+		Sensor();
 		Tick();
-		
-		while(!TimerFlag);
-		TimerFlag = 0;
 	}
 }
