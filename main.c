@@ -51,14 +51,55 @@ void TimerSet(unsigned long M)
 uint8_t alarm_hour = 0x00;
 uint8_t alarm_min = 0x00;
 
+// 0.954 hz is lowest frequency possible with this function,
+// based on settings in PWM_on()
+// Passing in 0 as the frequency will stop the speaker from generating sound
+void set_PWM(double frequency) {
+	static double current_frequency; // Keeps track of the currently set frequency
+	// Will only update the registers when the frequency changes, otherwise allows
+	// music to play uninterrupted.
+	if (frequency != current_frequency) {
+		if (!frequency) { TCCR3B &= 0x08; } //stops timer/counter
+		else { TCCR3B |= 0x03; } // resumes/continues timer/counter
+		
+		// prevents OCR3A from overflowing, using prescaler 64
+		// 0.954 is smallest frequency that will not result in overflow
+		if (frequency < 0.954) { OCR3A = 0xFFFF; }
+		
+		// prevents OCR0A from underflowing, using prescaler 64					// 31250 is largest frequency that will not result in underflow
+		else if (frequency > 31250) { OCR3A = 0x0000; }
+		
+		// set OCR3A based on desired frequency
+		else { OCR3A = (short)(8000000 / (128 * frequency)) - 1; }
+
+		TCNT3 = 0; // resets counter
+		current_frequency = frequency; // Updates the current frequency
+	}
+}
+
+void PWM_on() {
+	TCCR3A = (1 << COM3A0);
+	// COM3A0: Toggle PB3 on compare match between counter and OCR0A
+	TCCR3B = (1 << WGM32) | (1 << CS31) | (1 << CS30);
+	// WGM02: When counter (TCNT0) matches OCR0A, reset counter
+	// CS01 & CS30: Set a prescaler of 64
+	set_PWM(0);
+}
+
+void PWM_off()
+{
+	TCCR0A = 0x00;
+	TCCR0B = 0x00;
+}
+
 enum Menu_options {Init, Time_Display, ALARM, Time_Display_Release, Change_Time, Transition, Change_Date, Set_Alarm, Set_Hour, Set_Minute, Set_Sec, Set_Date, Set_Month, Set_Year, Reset, Set_Alarm_Hour, Set_Alarm_Min} option;
 void Menu()
 {
-	unsigned char sec_button = ~PINA & 0x04;		//button that controls seconds and year
-	unsigned char minute_button = ~PINA & 0x08;		//controls minutes and date
-	unsigned char hour_button = ~PINA & 0x10;		//controls hour and month
-	unsigned char next_button = ~PINA & 0x20;		//goes to next page
-	unsigned char home_button = ~PINA & 0x40;		//goes back to menu
+	unsigned char sec_button = ~PINB & 0x04;		//button that controls seconds and year
+	unsigned char minute_button = ~PINB & 0x08;		//controls minutes and date
+	unsigned char hour_button = ~PINB & 0x10;		//controls hour and month
+	unsigned char next_button = ~PINB & 0x20;		//goes to next page
+	unsigned char home_button = ~PINB & 0x80;		//goes back to menu
 	switch (option) //Transistions
 	{
 		case Init:
@@ -70,10 +111,6 @@ void Menu()
 		{
 			option = Time_Display_Release;
 		}
-		// 		else if (home_button == 0x40)
-		// 		{
-		// 			option = ALARM;
-		// 		}
 		else if((rtc.hour == alarm_hour) && (rtc.min == alarm_min))
 		{
 			option = ALARM;
@@ -105,7 +142,7 @@ void Menu()
 		{
 			option = Transition;
 		}
-		else if (home_button == 0x40)
+		else if (home_button == 0x80)
 		{
 			option = Init;
 		}
@@ -148,7 +185,7 @@ void Menu()
 		{
 			option = Reset;
 		}
-		else if (home_button == 0x40)
+		else if (home_button == 0x80)
 		{
 			option = Init;
 		}
@@ -182,7 +219,7 @@ void Menu()
 		{
 			option = Set_Alarm_Min;
 		}
-		else if (home_button == 0x40)
+		else if (home_button == 0x80)
 		{
 			option = Init;
 		}
@@ -218,6 +255,7 @@ void Menu()
 		alarm_hour = alarm.hour;
 		alarm_min = alarm.min;
 		LCD_Clear();
+		set_PWM(0);
 		break;
 		
 		case Time_Display:
@@ -385,6 +423,7 @@ void Menu()
 		if (USART_HasTransmitted(1))
 		{
 			LCD_Clear();
+			set_PWM(440);
 		}
 		break;
 		
@@ -393,19 +432,20 @@ void Menu()
 
 int main()
 {
-	DDRB = 0xFF; PORTB = 0x00;
-	DDRA = 0x03; PORTA = 0xFC;		//2 lower bits set to output for the LCD and the rest to input for the buttons
+	DDRA = 0xFF; PORTA = 0x00;
+	DDRB = 0x43; PORTB = 0xBC;		//2 lower bits set to output for the LCD and the rest to input for the buttons
 	option = Init;
 	
 	initUSART(1);
 	/*Connect RS->PA0, RW->GND, EN->PA1 and data bus to PB0-PB7*/
-	LCD_SetUp(PA_0,P_NC,PA_1,PB_0,PB_1,PB_2,PB_3,PB_4,PB_5,PB_6,PB_7);
+	LCD_SetUp(PB_0,P_NC,PB_1,PA_0,PA_1,PA_2,PA_3,PA_4,PA_5,PA_6,PA_7);
 	LCD_Init(2,16);
 	
 	/*Connect SCL->PC0, SDA->PC1*/
 	RTC_init();
 	TimerSet(10);
 	TimerOn();
+	PWM_on();
 	rtc.hour = 0x12;		//  testing to hard code all values for hour, min, sec, date, etc.
 	rtc.min =  0x44;
 	rtc.sec =  0x30;
