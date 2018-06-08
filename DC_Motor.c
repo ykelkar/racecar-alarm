@@ -289,14 +289,12 @@ int main()
 	TIMSK1 = (1 << TOIE1);	/* Enable Timer1 overflow interrupts */
 	TCCR1A = 0;		/* Set all bit to zero Normal operation */
 	
-	//Initialize PWM Channel 0
 	PWM_state = Init;
 	sensor_state = Sense;
 	state = Init1;
 	TimerSet(100);
 	TimerOn();
 	InitPWM();
-	//Do this forever
 
 	while(1)
 	{
