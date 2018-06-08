@@ -3,7 +3,7 @@
 #include <util/delay.h>
 #include "C:\Users\Avanti\Documents\Atmel Studio\7.0\GccApplication1\GccApplication1\rtc\rtc.c"
 #include "C:\Users\Avanti\Documents\Atmel Studio\7.0\GccApplication1\GccApplication1\rtc\lcd.c"
-#include "usart_ATmega1284.h"
+#include "usart.h"
 
 
 rtc_t rtc;
