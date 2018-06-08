@@ -177,35 +177,11 @@ void Sensor()
 			PORTC = 0x00;
 			obj_detect = 0;
 		}
-
-		// 		dtostrf(distance, 2, 2, string);/* distance to string */
-		// 		strcat(string, " cm   ");	/* Concat unit i.e.cm */
-		// 		LCD_String_xy(2, 0, "Dist = ");
-		// 		LCD_String_xy(2, 7, string);	/* Print distance */
 		_delay_ms(200);
 		break;
 	}
 }
-/******************************************************************
-Sets the duty cycle of output. 
 
-Arguments
----------
-duty: Between 0 - 255
-
-0= 0%
-
-255= 100%
-
-The Function sets the duty cycle of pwm output generated on OC0 PIN
-The average voltage on this output pin will be
-
-         duty
- Vout=  ------ x 5v
-         255 
-
-This can be used to control the brightness of LED or Speed of Motor.
-*********************************************************************/
 
 enum States {Init1, Receive, Off_Release, On_Press, On_Release, Off_Press} state;
 
